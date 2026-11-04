@@ -1,2 +1,14 @@
-# Configuration for PerWorldPluginsGUI
+# PerWorldPluginsGUI Configuration
+# ══════════════════════════════════
+# Stores per-world enable/disable states for each plugin.
+# Format:
+#   plugins:
+#     <PluginName>:
+#       <world_name>: true|false
+#
+# true  = plugin commands are allowed in that world (default if omitted)
+# false = plugin commands are blocked in that world
+#
+# Changes here take effect after /pwp reload or server restart.
+
 plugins: {}

@@ -1,10 +1,20 @@
 name: PerWorldPluginsGUI
-version: 1.0
+version: '${project.version}'
 main: com.pwp.gui.PerWorldPluginsGUI
-api-version: '1.21'
-description: A simple GUI to manage plugins per world.
+# Injected by Maven profile: '1.21' for 1.21.x builds, '26.3' (or similar) for 26.x builds.
+api-version: '${plugin.apiVersion}'
+description: A GUI to manage which plugins are active per-world. Supports pagination, in-memory caching, and tab-completion.
+authors:
+  - pwp
+folia-supported: false
+
 commands:
   pwp:
-    description: Opens the Per-World Plugins Manager GUI.
+    description: Opens the Per-World Plugins Manager GUI, or reloads the configuration.
     permission: pwp.admin
-    usage: /pwp
+    usage: /<command> [reload]
+
+permissions:
+  pwp.admin:
+    description: Grants full access to the PerWorldPluginsGUI management interface.
+    default: op
