@@ -6,7 +6,7 @@
 
     <groupId>com.pwp.gui</groupId>
     <artifactId>PerWorldPluginsGUI</artifactId>
-    <version>1.2</version>
+    <version>1.2.1</version>
     <packaging>jar</packaging>
 
     <!--

@@ -1,11 +1,11 @@
-# PerWorldPluginsGUI v1.2 Release Notes
+# PerWorldPluginsGUI v1.2.1 Release Notes
 
 ## 📄 Overview
-**PerWorldPluginsGUI v1.2** is a major architectural overhaul that converts the plugin into a **pure native Paper plugin** (`paper-plugin.yml`), introduces **dynamic event listener interception** (`HandlerList` / `RegisteredListener`), modern Paper **Brigadier lifecycle commands**, and intuitive **ESC / Back-button navigation with scroll memory**.
+**PerWorldPluginsGUI v1.2.1** is a pure native Paper plugin (`paper-plugin.yml`) featuring **dynamic event listener interception** (`HandlerList` / `RegisteredListener`), modern Paper **Brigadier lifecycle commands**, and intuitive **ESC / Back-button navigation with scroll memory**.
 
 ---
 
-## 🚀 What's New in v1.2
+## 🚀 What's New in v1.2.1
 
 ### 1. 📜 Pure Native Paper Plugin (`paper-plugin.yml`)
 - Fully migrated from legacy Bukkit `plugin.yml` to modern `paper-plugin.yml`.
@@ -36,7 +36,7 @@ Previously, the plugin only checked chat commands (`PlayerCommandPreprocessEvent
 ---
 
 ## 📦 Installation
-1. Download **`PerWorldPluginsGUI-1.2.jar`**.
+1. Download **`PerWorldPluginsGUI-1.2.1.jar`**.
 2. Place the file into your server's `plugins/` folder.
 3. Restart your Paper or Purpur server.
 4. Run `/pwp` in-game to configure your per-world plugin rules!
