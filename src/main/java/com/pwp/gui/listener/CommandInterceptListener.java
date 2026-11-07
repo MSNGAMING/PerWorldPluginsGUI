@@ -1,9 +1,9 @@
 package com.pwp.gui.listener;
 
+import com.pwp.gui.command.CommandPluginResolver;
 import com.pwp.gui.config.WorldPluginConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -15,46 +15,35 @@ import org.bukkit.plugin.java.JavaPlugin;
  * Intercepts player-issued commands and blocks them when the owning plugin
  * is marked as disabled in the player's current world.
  *
- * <p><b>Limitations (documented):</b>
- * <ul>
- *   <li>Console commands ({@code ServerCommandEvent}) and RCON commands are not
- *       blocked — blocking server-side automation is intentionally out of scope.</li>
- *   <li>Command blocks and {@code /execute} targeting a player bypass this check
- *       because those do not fire {@link PlayerCommandPreprocessEvent}.</li>
- *   <li>Direct API calls ({@code player.performCommand(...)}) from other plugins
- *       also bypass this check for the same reason.</li>
- * </ul>
- *
- * <p>Priority is set to {@code HIGHEST} with {@code ignoreCancelled = true}
- * so we act late (after other plugins) but only on events still alive.
+ * <p>Supports traditional Bukkit commands, Paper Brigadier lifecycle commands,
+ * and namespaced aliases via {@link CommandPluginResolver}.
  */
 public final class CommandInterceptListener implements Listener {
 
     private final WorldPluginConfig config;
     private final JavaPlugin self;
+    private final CommandPluginResolver commandResolver;
 
-    public CommandInterceptListener(WorldPluginConfig config, JavaPlugin self) {
+    public CommandInterceptListener(WorldPluginConfig config, JavaPlugin self, CommandPluginResolver commandResolver) {
         this.config = config;
         this.self   = self;
+        this.commandResolver = commandResolver;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
-        // Strip the leading '/' and isolate the root command label.
-        String message     = event.getMessage().substring(1);
-        String commandRoot = message.split(" ")[0].toLowerCase();
+        String message = event.getMessage();
+        if (message.length() <= 1) return;
 
-        // Handle namespaced commands like "minecraft:tp" or "essentials:home".
-        if (commandRoot.contains(":")) {
-            commandRoot = commandRoot.substring(commandRoot.indexOf(':') + 1);
-        }
+        // Strip the leading '/' and isolate the root command token
+        String commandRoot = message.substring(1).split(" ")[0].toLowerCase();
+        if (commandRoot.isEmpty()) return;
 
-        PluginCommand cmd = self.getServer().getPluginCommand(commandRoot);
-        if (cmd == null || cmd.getPlugin() == null) return;
+        String pluginName = commandResolver.resolvePluginName(commandRoot);
+        if (pluginName == null) return;
 
-        String pluginName = cmd.getPlugin().getName();
-        // Never block commands that belong to this plugin itself.
-        if (pluginName.equals(self.getName())) return;
+        // Never block commands that belong to this management plugin itself
+        if (pluginName.equalsIgnoreCase(self.getName())) return;
 
         Player player    = event.getPlayer();
         String worldName = player.getWorld().getName();

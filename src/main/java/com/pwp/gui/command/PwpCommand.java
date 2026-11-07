@@ -1,6 +1,7 @@
 package com.pwp.gui.command;
 
 import com.pwp.gui.config.WorldPluginConfig;
+import com.pwp.gui.listener.ListenerManager;
 import com.pwp.gui.menu.PluginSelectMenu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -28,10 +29,15 @@ public final class PwpCommand implements CommandExecutor, TabCompleter {
 
     private final JavaPlugin plugin;
     private final WorldPluginConfig config;
+    private final CommandPluginResolver commandResolver;
+    private final ListenerManager listenerManager;
 
-    public PwpCommand(JavaPlugin plugin, WorldPluginConfig config) {
+    public PwpCommand(JavaPlugin plugin, WorldPluginConfig config,
+                      CommandPluginResolver commandResolver, ListenerManager listenerManager) {
         this.plugin = plugin;
         this.config = config;
+        this.commandResolver = commandResolver;
+        this.listenerManager = listenerManager;
     }
 
     // ── CommandExecutor ──────────────────────────────────────────────────
@@ -48,9 +54,11 @@ public final class PwpCommand implements CommandExecutor, TabCompleter {
         // /pwp reload
         if (args.length >= 1 && args[0].equalsIgnoreCase("reload")) {
             config.reload();
+            commandResolver.buildIndex();
+            listenerManager.wrapAllListeners();
             sender.sendMessage(Component.text(
-                    "✔ PerWorldPluginsGUI config reloaded successfully.", NamedTextColor.GREEN));
-            plugin.getLogger().info(sender.getName() + " reloaded the PerWorldPluginsGUI config.");
+                    "✔ PerWorldPluginsGUI config and listener hooks reloaded successfully.", NamedTextColor.GREEN));
+            plugin.getLogger().info(sender.getName() + " reloaded the PerWorldPluginsGUI config and hooks.");
             return true;
         }
 
