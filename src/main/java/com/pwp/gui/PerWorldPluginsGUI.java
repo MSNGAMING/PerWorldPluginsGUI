@@ -6,14 +6,17 @@ import com.pwp.gui.config.WorldPluginConfig;
 import com.pwp.gui.listener.CommandInterceptListener;
 import com.pwp.gui.listener.InventoryListener;
 import com.pwp.gui.listener.ListenerManager;
-import org.bukkit.command.PluginCommand;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * PerWorldPluginsGUI — main plugin entry point.
+ * PerWorldPluginsGUI — Native Paper plugin entry point.
  *
- * <p>Integrates dynamic event listener interception and command routing
- * to isolate plugins completely per world.
+ * <p>Integrates Paper Brigadier lifecycle commands, dynamic event listener
+ * interception, and Adventure text components to provide per-world plugin isolation.
  */
 public final class PerWorldPluginsGUI extends JavaPlugin {
 
@@ -32,17 +35,12 @@ public final class PerWorldPluginsGUI extends JavaPlugin {
         // Event listener manager that wraps Bukkit HandlerLists to suppress events in disabled worlds
         listenerManager = new ListenerManager(worldPluginConfig, this);
 
-        // Register command + tab-completer
-        PwpCommand pwpCommand = new PwpCommand(this, worldPluginConfig, commandResolver, listenerManager);
-        PluginCommand cmd = getCommand("pwp");
-        if (cmd != null) {
-            cmd.setExecutor(pwpCommand);
-            cmd.setTabCompleter(pwpCommand);
-        } else {
-            getLogger().severe("'pwp' command is missing from plugin.yml! Disabling plugin.");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
+        // Native Paper Brigadier Command Registration
+        LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
+        manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            final Commands commands = event.registrar();
+            commands.register(PwpCommand.createNode(this, worldPluginConfig, commandResolver, listenerManager));
+        });
 
         // Register event listeners
         getServer().getPluginManager().registerEvents(
@@ -61,7 +59,7 @@ public final class PerWorldPluginsGUI extends JavaPlugin {
             getLogger().info("Event and command intercepts initialized for all active plugins.");
         });
 
-        getLogger().info("PerWorldPluginsGUI v" + getDescription().getVersion() + " enabled.");
+        getLogger().info("PerWorldPluginsGUI v" + getPluginMeta().getVersion() + " (Native Paper) enabled.");
     }
 
     @Override

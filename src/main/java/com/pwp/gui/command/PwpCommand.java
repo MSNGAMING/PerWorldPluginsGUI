@@ -1,91 +1,65 @@
 package com.pwp.gui.command;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.pwp.gui.config.WorldPluginConfig;
 import com.pwp.gui.listener.ListenerManager;
 import com.pwp.gui.menu.PluginSelectMenu;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.List;
+import org.bukkit.plugin.Plugin;
 
 /**
- * Handles the {@code /pwp} command.
+ * Native Paper Brigadier command builder for {@code /pwp}.
  *
- * <p>Sub-commands:
+ * <p>Commands provided:
  * <ul>
- *   <li>{@code /pwp}        — opens the plugin-select GUI (player only)</li>
- *   <li>{@code /pwp reload} — reloads config from disk (console + player)</li>
+ *   <li>{@code /pwp} — opens the main plugin management GUI (player only)</li>
+ *   <li>{@code /pwp reload} — reloads configuration, command cache, and event listener hooks</li>
  * </ul>
- *
- * <p>Both sub-commands require the {@code pwp.admin} permission.
  */
-public final class PwpCommand implements CommandExecutor, TabCompleter {
+public final class PwpCommand {
 
-    private final JavaPlugin plugin;
-    private final WorldPluginConfig config;
-    private final CommandPluginResolver commandResolver;
-    private final ListenerManager listenerManager;
+    private PwpCommand() {}
 
-    public PwpCommand(JavaPlugin plugin, WorldPluginConfig config,
-                      CommandPluginResolver commandResolver, ListenerManager listenerManager) {
-        this.plugin = plugin;
-        this.config = config;
-        this.commandResolver = commandResolver;
-        this.listenerManager = listenerManager;
-    }
+    public static LiteralCommandNode<CommandSourceStack> createNode(
+            Plugin plugin,
+            WorldPluginConfig config,
+            CommandPluginResolver commandResolver,
+            ListenerManager listenerManager) {
 
-    // ── CommandExecutor ──────────────────────────────────────────────────
+        return Commands.literal("pwp")
+                .requires(source -> source.getSender().hasPermission("pwp.admin"))
+                .executes(context -> {
+                    CommandSender sender = context.getSource().getSender();
+                    if (!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text(
+                                "Only players can open the GUI. Console usage: /pwp reload",
+                                NamedTextColor.YELLOW));
+                        return Command.SINGLE_SUCCESS;
+                    }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command,
-                             String label, String[] args) {
-        if (!sender.hasPermission("pwp.admin")) {
-            sender.sendMessage(Component.text(
-                    "You do not have permission to use this command.", NamedTextColor.RED));
-            return true;
-        }
+                    PluginSelectMenu.open(player, plugin, 0);
+                    return Command.SINGLE_SUCCESS;
+                })
+                .then(Commands.literal("reload")
+                        .executes(context -> {
+                            CommandSender sender = context.getSource().getSender();
+                            config.reload();
+                            commandResolver.buildIndex();
+                            listenerManager.wrapAllListeners();
 
-        // /pwp reload
-        if (args.length >= 1 && args[0].equalsIgnoreCase("reload")) {
-            config.reload();
-            commandResolver.buildIndex();
-            listenerManager.wrapAllListeners();
-            sender.sendMessage(Component.text(
-                    "✔ PerWorldPluginsGUI config and listener hooks reloaded successfully.", NamedTextColor.GREEN));
-            plugin.getLogger().info(sender.getName() + " reloaded the PerWorldPluginsGUI config and hooks.");
-            return true;
-        }
-
-        // /pwp — open GUI (players only)
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text(
-                    "Only players can open the GUI. Console usage: /pwp reload",
-                    NamedTextColor.YELLOW));
-            return true;
-        }
-
-        PluginSelectMenu.open(player, plugin, 0);
-        return true;
-    }
-
-    // ── TabCompleter ─────────────────────────────────────────────────────
-
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command,
-                                      String label, String[] args) {
-        if (!sender.hasPermission("pwp.admin")) return List.of();
-
-        if (args.length == 1) {
-            String typed = args[0].toLowerCase();
-            return "reload".startsWith(typed) ? List.of("reload") : List.of();
-        }
-
-        return List.of();
+                            sender.sendMessage(Component.text(
+                                    "✔ PerWorldPluginsGUI config and listener hooks reloaded successfully.",
+                                    NamedTextColor.GREEN));
+                            plugin.getLogger().info(sender.getName() + " reloaded the PerWorldPluginsGUI config and hooks.");
+                            return Command.SINGLE_SUCCESS;
+                        })
+                )
+                .build();
     }
 }

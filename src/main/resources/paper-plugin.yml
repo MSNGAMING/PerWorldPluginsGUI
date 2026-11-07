@@ -1,0 +1,13 @@
+name: PerWorldPluginsGUI
+version: '${project.version}'
+main: com.pwp.gui.PerWorldPluginsGUI
+api-version: '${plugin.apiVersion}'
+description: Native Paper plugin to dynamically manage and isolate plugins per world with paginated GUI and event interception.
+authors:
+  - pwp
+folia-supported: false
+
+permissions:
+  pwp.admin:
+    description: Grants full administrative access to the PerWorldPluginsGUI management interface.
+    default: op
